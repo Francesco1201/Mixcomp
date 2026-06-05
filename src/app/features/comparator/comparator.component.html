@@ -1,0 +1,136 @@
+
+
+<div class="font-['JetBrains_Mono'] @container bg-amber-400 px-6 py-6 border-20 border-double">
+  <h1 class="text-5xl font-bold text-center p-4">ONLINE MIX COMPARATOR</h1>
+
+  <div class="bg-white ring ring-black p-4">
+    <strong>Instructions: Load a track by clicking either "Choose A" or "Choose B". Press button "A" to listen to track A, or "B" to listen to track B. The "A+B" button plays both loaded tracks simultaneously, while "A/B" allows you to seamlessly switch between them for a direct comparison. The "LU" button matches the perceived volume (LUFS) of the two tracks so they sound equally loud without clipping. Finally, the bin icon ("Reset") clears the current session and removes the loaded tracks.</strong>
+  </div>
+
+  <div class="grid grid-cols-2 sm:grid-cols-2 bg-white p-4 ring ring-black">
+    <label for="fileInputA" class="font-bold flex items-center justify-center w-40 h-12 border border-black cursor-pointer bg-white hover:border-green-400 hover:bg-slate-900 hover:text-green-400 hover:shadow-[0_0_15px_rgba(74,222,128,0.3)] transition-colors">
+      CHOOSE A
+    </label>
+    <input #fileInputA id="fileInputA" type="file" accept="audio/*" (change)="onFileA($event)" class="hidden">
+    <label for="fileInputB" class="font-bold flex items-center justify-center w-40 h-12 border border-black cursor-pointer bg-white hover:border-blue-400 hover:bg-slate-900 hover:text-blue-400 hover:shadow-[0_0_15px_rgba(96,165,250,0.3)] transition-colors">
+      CHOOSE B
+    </label>
+    <input #fileInputB id="fileInputB" type="file" accept="audio/*" (change)="onFileB($event)" class="hidden">
+  </div>
+
+  <div class="bg-white p-4 ring ring-black">
+    <h2 class="font-bold">WAVEFORMS</h2>
+    <div class="p-2">
+      <app-waveform
+        [buffer]="bufferA"
+        [color]="'#4ade80'"
+        [duration]="bufferA?.duration || 0"
+        [currentTime]="currentTimeA"
+        (seek)="onSeekA($event)">
+      </app-waveform>
+    </div>
+    <div class="p-2">
+      <app-waveform
+        [buffer]="bufferB"
+        [color]="'#60a5fa'"
+        [duration]="bufferB?.duration || 0"
+        [currentTime]="currentTimeB"
+        (seek)="onSeekB($event)">
+      </app-waveform>
+    </div>
+  </div>
+
+
+  <div class="bg-white p-4 ring ring-black">
+    <h2 class="font-bold">TRANSPORT</h2>
+    <app-player-controls
+      [hasA]="bufferA !== null"
+      [hasB]="bufferB !== null"
+      [hasAny]="bufferA !== null || bufferB !== null"
+      [isPlayingA]="isPlayingA"
+      [isPlayingB]="isPlayingB"
+      [isNormalized]="isNormalized"
+      [canAct]="bufferA !== null && bufferB !== null"
+      (playA)="onPlayA()"
+      (playB)="onPlayB()"
+      (rewind)="onRewind()"
+      (stop)="onStop()"
+      (playBoth)="onPlayBoth()"
+      (switchAB)="onSwitchAB()"
+      (normalize)="onNormalize()"
+      (reset)="onReset()">
+    </app-player-controls>
+  </div>
+
+  <div class="bg-white p-4 ring ring-black">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <div class="border-b md:border-b-0 md:border-r border-black pb-6 md:pb-0 md:pr-6">
+        <h2 class="font-bold">TRACK A</h2>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="bg-green-100 p-2">
+            <h4 class="text-xs font-bold text-green-500 uppercase mb-1">Level Meter</h4>
+            <app-level-meter #meterA [analyserL]="analyserAL" [analyserR]="analyserAR" [isPlaying]="isPlayingA"></app-level-meter>
+          </div>
+
+          <div class="bg-green-100 p-2">
+            <h4 class="text-xs font-bold text-green-500 uppercase mb-1">Stereo Imager</h4>
+            <app-stereo-imager #stereoA [analyserL]="analyserAL" [analyserR]="analyserAR" color="#4ade80" [isPlaying]="isPlayingA"></app-stereo-imager>
+          </div>
+
+          <div class="bg-green-100 p-2 flex flex-col justify-center">
+            <h4 class="text-xs font-bold text-green-500 uppercase mb-2">LUFS / Peak</h4>
+            <p class="text-sm font-mono">LUFS: <span class="font-bold">{{ lufsA | number:'1.1-1' }}</span></p>
+            <p class="text-sm font-mono">Peak: <span class="font-bold">{{ peakA | number:'1.1-1' }} dB</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2 class="font-bold">TRACK B</h2>
+
+        <div class="grid grid-cols-3 gap-4">
+          <div class="bg-blue-100 p-2">
+            <h4 class="text-xs font-bold text-blue-500 uppercase mb-1">Level Meter</h4>
+            <app-level-meter #meterB [analyserL]="analyserBL" [analyserR]="analyserBR" [isPlaying]="isPlayingB"></app-level-meter>
+          </div>
+
+          <div class="bg-blue-100 p-2">
+            <h4 class="text-xs font-bold text-blue-500 uppercase mb-1">Stereo Imager</h4>
+            <app-stereo-imager #stereoB [analyserL]="analyserBL" [analyserR]="analyserBR" color="#60a5fa" [isPlaying]="isPlayingB"></app-stereo-imager>
+          </div>
+
+          <div class="bg-blue-100 p-2 flex flex-col justify-center">
+            <h4 class="text-xs font-bold text-blue-500 uppercase mb-2">LUFS / Peak</h4>
+            <p class="text-sm font-mono">LUFS: <span class="font-bold">{{ lufsB | number:'1.1-1' }}</span></p>
+            <p class="text-sm font-mono">Peak: <span class="font-bold">{{ peakB | number:'1.1-1' }} dB</span></p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="bg-white p-4 ring ring-black">
+    <app-spectral [analyserAL]="analyserAL" [analyserBL]="analyserBL" [isPlaying]="isPlayingA || isPlayingB">></app-spectral>
+  </div>
+
+  <div class="p-4 bg-white ring ring-black flex flex-col gap-4">
+
+    <p class="font-bold text-black">
+      <strong class="font-bold text-black">Privacy & Security Note:</strong>
+      This application uses Web Audio APIs for real-time processing. No audio data is uploaded, stored, or sent to any external server. Everything runs entirely on your local machine.
+    </p>
+
+    <a href="https://www.buymeacoffee.com/francus"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="inline-flex items-center gap-2 bg-black hover:bg-[#ffb900] text-white font-sans font-bold text-sm px-5 py-2.5 shadow-md transition-all transform mx-auto w-fit">
+      <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20.25 6h-1.5V5c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10.5c0 3.6 2.9 6.5 6.5 6.5h4c3.4 0 6.2-2.6 6.5-5.9h1.3c1.8 0 3.3-1.5 3.3-3.3V9.3c0-1.8-1.5-3.3-3.3-3.3zm-1.5 7h-1.3v-5h1.3c.7 0 1.3.6 1.3 1.3v2.5c0 .6-.6 1.2-1.3 1.2z"/>
+      </svg>
+      Support the project
+    </a>
+  </div>
+</div>
